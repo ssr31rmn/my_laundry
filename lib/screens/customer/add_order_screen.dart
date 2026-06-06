@@ -54,7 +54,10 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Buat Pesanan Baru', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Buat Pesanan Baru',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: const Color(0xFF0091BD),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -68,7 +71,11 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
               children: [
                 const Text(
                   'Formulir Pesanan Laundry',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0091BD)),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0091BD),
+                  ),
                 ),
                 const SizedBox(height: 20),
 
@@ -77,12 +84,17 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                   value: _selectedPackage,
                   decoration: const InputDecoration(
                     labelText: 'Pilih Jenis Paket',
-                    prefixIcon: Icon(Icons.local_laundry_service, color: Color(0xFF0091BD)),
+                    prefixIcon: Icon(
+                      Icons.local_laundry_service,
+                      color: Color(0xFF0091BD),
+                    ),
                   ),
                   items: packages.map((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
-                      child: Text('$value (Rp ${orderProvider.priceList[value]}/unit)'),
+                      child: Text(
+                        '$value (Rp ${orderProvider.priceList[value]}/unit)',
+                      ),
                     );
                   }).toList(),
                   onChanged: (newValue) {
@@ -91,24 +103,33 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                     });
                     _updateTotalPrice(_weightController.text, orderProvider);
                   },
-                  validator: (value) => value == null ? 'Silakan pilih jenis paket' : null,
+                  validator: (value) =>
+                      value == null ? 'Silakan pilih jenis paket' : null,
                 ),
                 const SizedBox(height: 16),
 
                 // 2. Input Berat atau Jumlah Satuan
                 TextFormField(
                   controller: _weightController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: const InputDecoration(
                     labelText: 'Berat (Kg) / Jumlah Satuan',
-                    prefixIcon: Icon(Icons.scale_outlined, color: Color(0xFF0091BD)),
+                    prefixIcon: Icon(
+                      Icons.scale_outlined,
+                      color: Color(0xFF0091BD),
+                    ),
                     hintText: 'Contoh: 3.5 atau 2',
                   ),
                   onChanged: (text) => _updateTotalPrice(text, orderProvider),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Jumlah tidak boleh kosong';
-                    if (double.tryParse(value) == null) return 'Masukkan angka yang valid';
-                    if (double.parse(value) <= 0) return 'Jumlah harus lebih dari 0';
+                    if (value == null || value.isEmpty)
+                      return 'Jumlah tidak boleh kosong';
+                    if (double.tryParse(value) == null)
+                      return 'Masukkan angka yang valid';
+                    if (double.parse(value) <= 0)
+                      return 'Jumlah harus lebih dari 0';
                     return null;
                   },
                 ),
@@ -119,7 +140,10 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                   value: _selectedPayment,
                   decoration: const InputDecoration(
                     labelText: 'Metode Pembayaran',
-                    prefixIcon: Icon(Icons.payment_rounded, color: Color(0xFF0091BD)),
+                    prefixIcon: Icon(
+                      Icons.payment_rounded,
+                      color: Color(0xFF0091BD),
+                    ),
                   ),
                   items: const [
                     DropdownMenuItem(
@@ -145,18 +169,28 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFFF9C0A).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFFF9C0A), width: 1.5),
+                    border: Border.all(
+                      color: const Color(0xFFFF9C0A),
+                      width: 1.5,
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
                         'Total Pembayaran:',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
                         'Rp $_calculatedTotal',
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFFF9C0A)),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFFF9C0A),
+                        ),
                       ),
                     ],
                   ),
@@ -171,32 +205,61 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                           backgroundColor: const Color(0xFF0091BD),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                         onPressed: () async {
                           if (_formKey.currentState!.validate()) {
                             // Kirim pesanan ke Firebase lewat OrderProvider
+                            // KODE PERBAIKAN (Ganti bagian ini):
                             String? error = await orderProvider.createOrder(
                               customerId: authProvider.userModel!.uid,
                               customerName: authProvider.userModel!.name,
-                              packageType: _selectedPackage!,
-                              weightOrQuantity: double.parse(_weightController.text),
+                              packageType: _selectedPackage!.split(
+                                ' ',
+                              )[0], // Mengambil kata depan saja, misal 'Kiloan' atau 'Satuan'
+                              itemDetail: _selectedPackage!
+                                  .replaceFirst(
+                                    _selectedPackage!.split(' ')[0],
+                                    '',
+                                  )
+                                  .trim(), // Mengambil sisa teksnya, misal 'Regular (3 Hari)' atau 'Bedcover'
+                              weightOrQuantity: double.parse(
+                                _weightController.text,
+                              ),
+                              perfumeVariant:
+                                  'Reguler / Standar', // Nilai default karena input belum ada di Form UI
                               paymentMethod: _selectedPayment,
                             );
 
                             if (error != null) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Gagal membuat pesanan: $error')),
+                                SnackBar(
+                                  content: Text(
+                                    'Gagal membuat pesanan: $error',
+                                  ),
+                                ),
                               );
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Pesanan berhasil dibuat!')),
+                                const SnackBar(
+                                  content: Text('Pesanan berhasil dibuat!'),
+                                ),
                               );
-                              Navigator.pop(context); // Kembali ke dashboard customer
+                              Navigator.pop(
+                                context,
+                              ); // Kembali ke dashboard customer
                             }
                           }
                         },
-                        child: const Text('Kirim Pesanan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Kirim Pesanan',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
               ],
             ),

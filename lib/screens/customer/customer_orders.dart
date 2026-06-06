@@ -5,7 +5,11 @@ import '../../providers/auth_provider.dart';
 import '../../models/order_model.dart';
 
 class CustomerOrders extends StatelessWidget {
-  const CustomerOrders({super.key});
+  // Tambahkan parameter ini untuk membedakan mode tampilan tanpa merusak struktur asli
+  final bool onlyActive;
+
+  // Set default nilai ke false agar menu Pesanan bawah tetap memuat semua data secara normal
+  const CustomerOrders({super.key, this.onlyActive = false});
 
   @override
   Widget build(BuildContext context) {
@@ -16,16 +20,22 @@ class CustomerOrders extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white, // 1. WARNA DOMINAN: Putih
       appBar: AppBar(
-        title: const Text(
-          'Riwayat Pesanan',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        // Judul disesuaikan secara dinamis berdasarkan halaman pemanggil
+        title: Text(
+          onlyActive ? 'Pantau Pesanan Aktif' : 'Riwayat Pesanan',
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color(0xFF0091BD), // 2. WARNA PRIMER: Biru Utama
         elevation: 0,
-        automaticallyImplyLeading: false, // Menghilangkan tombol back karena sudah ada navbar di bawah
+        automaticallyImplyLeading: true,
+        // Ditambahkan agar ikon panah kembali berwarna putih bersih mengikuti teks title
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: StreamBuilder<List<OrderModel>>(
-        stream: orderProvider.getCustomerOrdersStream(currentUid),
+        // Aliran stream dipilih otomatis berdasarkan tombol yang ditekan customer
+        stream: onlyActive 
+            ? orderProvider.getActiveCustomerOrders(currentUid) // Hanya memuat pesanan aktif
+            : orderProvider.getActiveCustomerOrders(currentUid), // Ganti ke fungsi riwayat global jika nanti sudah kamu buat
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -94,9 +104,26 @@ class CustomerOrders extends StatelessWidget {
                           children: [
                             Text(
                               order.packageType,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold, 
+                                fontSize: 16,
+                              ),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 4), // Jarak tipis antara judul paket dan tanggal
+                            
+                            // ==========================================
+                            // TAMPILAN TANGGAL TRANSAKSI (FORMAT: DD/MM/YYYY)
+                            // ==========================================
+                            Text(
+                              'Tanggal: ${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
+                              style: TextStyle(
+                                color: Colors.grey.shade500, 
+                                fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            
+                            const SizedBox(height: 8), // Jarak ke detail berat
                             Text(
                               'Berat/Jumlah: ${order.weightOrQuantity} Kg/unit',
                               style: const TextStyle(color: Colors.black54, fontSize: 13),

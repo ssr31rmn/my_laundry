@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'customer_dashboard.dart'; // Halaman 1: Beranda
-import 'customer_orders.dart';    // Halaman 2: Pesanan (TAMBAHKAN IMPORT INI)
+import 'customer_orders.dart'; 
+import 'customer_profile.dart';
+import 'customer_reports.dart';  // Halaman 3: Laporan (TAMBAHKAN IMPORT INI)
 
 class CustomerMainNav extends StatefulWidget {
   const CustomerMainNav({super.key});
@@ -19,8 +21,8 @@ class _CustomerMainNavState extends State<CustomerMainNav> {
     _pages = [
       const CustomerDashboard(), // Tab 1: Beranda yang baru (Kombinasi 3 Warna)
       const CustomerOrders(),    // Tab 2: Halaman Pesanan yang baru (GANTI DI SINI)
-      const Center(child: Text('Halaman Laporan (Soon)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))), // Tab 3
-      const Center(child: Text('Halaman Akun (Soon)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),    // Tab 4
+      const CustomerReports(),   // Tab 3: Halaman Laporan yang baru (TAMBAHKAN INI)
+      const CustomerProfile(),    // Tab 4
     ];
   }
 

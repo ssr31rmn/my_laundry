@@ -1,7 +1,14 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:convert'; // Wajib ditambahkan di baris paling atas
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
 
 class AuthProvider with ChangeNotifier {
   // Hubungan ke layanan Firebase Authentication dan Firestore Database
@@ -117,5 +124,51 @@ class AuthProvider with ChangeNotifier {
     await _auth.signOut();
     _userModel = null; // Menghapus data pengguna yang sedang aktif di aplikasi
     notifyListeners();
+  }
+
+  // Instance Firebase Storage
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+
+  // Fungsi untuk memilih gambar dari galeri dan langsung mengunggahnya
+  Future<String?> uploadProfilePicture() async {
+    if (_userModel == null) return null;
+
+    final ImagePicker picker = ImagePicker();
+    
+    // 1. Pilih gambar dari galeri
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 30, // Kompres ke 30% agar ukuran teks Base64 hemat & muat di Firestore
+    );
+
+    if (image == null) return null;
+
+    try {
+      // 2. Baca file gambar menjadi bytes
+      final Uint8List imageBytes = await image.readAsBytes();
+
+      // 3. Ubah bytes gambar menjadi teks String Base64
+      String base64String = base64Encode(imageBytes);
+
+      // 4. Update langsung ke Cloud Firestore pada dokumen user yang sama
+      await _db.collection('users').doc(_userModel!.uid).update({
+        'profilePicture': base64String,
+      });
+
+      // 5. Update data lokal di aplikasi
+      _userModel = UserModel(
+        uid: _userModel!.uid,
+        name: _userModel!.name,
+        email: _userModel!.email,
+        role: _userModel!.role,
+        profilePicture: base64String, // Sekarang berisi teks Base64
+      );
+
+      notifyListeners();
+      return base64String;
+    } catch (e) {
+      print("Eror Base64: $e");
+      return null;
+    }
   }
 }
