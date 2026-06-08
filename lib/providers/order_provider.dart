@@ -135,6 +135,23 @@ class OrderProvider with ChangeNotifier {
   }
 
   // ==========================================
+  // FUNGSI BARU: STREAM SEMUA PESANAN BY CUSTOMER (UNTUK LAPORAN)
+  // ==========================================
+  Stream<List<OrderModel>> getAllCustomerOrders(String customerId) {
+    return _db
+        .collection('orders')
+        .where('customerId', isEqualTo: customerId)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map(
+                (doc) => OrderModel.fromMap(doc.data(), doc.id),
+              ) // <--- Diubah ke .fromMap agar seragam dan aman
+              .toList();
+        });
+  }
+
+  // ==========================================
   // 6. FUNGSI UPDATE STATUS PESANAN OLEH ADMIN
   // ==========================================
   Future<String?> updateOrderStatus(String orderId, String newStatus) async {

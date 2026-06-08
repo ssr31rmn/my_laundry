@@ -7,8 +7,6 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert'; // Wajib ditambahkan di baris paling atas
-import 'dart:typed_data';
-import 'package:image_picker/image_picker.dart';
 
 class AuthProvider with ChangeNotifier {
   // Hubungan ke layanan Firebase Authentication dan Firestore Database
@@ -28,8 +26,10 @@ class AuthProvider with ChangeNotifier {
   Future<String?> registerCustomer(
     String name,
     String email,
-    String password,
-  ) async {
+    String password, {
+    String? phone,    // 🟢 Tambahan baru opsional/named parameter
+    String? address,  // 🟢 Tambahan baru opsional/named parameter
+  }) async {
     _isLoading = true;
     notifyListeners(); // Memberitahu UI untuk memunculkan animasi loading
 
@@ -41,11 +41,15 @@ class AuthProvider with ChangeNotifier {
       );
 
       // Membuat objek data pengguna baru dengan role otomatis "customer"
+      // 🟢 Pastikan file user_model.dart kamu sudah ditambahkan parameter phone & address ini!
       UserModel newUser = UserModel(
         uid: credential.user!.uid,
         name: name,
         email: email,
         role: 'customer',
+        phone: phone ?? '',       // 🟢 Menyimpan No. Telepon ke model data lokal
+        address: address ?? '',   // 🟢 Menyimpan Alamat ke model data lokal
+        profilePicture: '',       // Inisialisasi awal foto kosong
       );
 
       // Menyimpan detail data pengguna ke Firestore Database di koleksi 'users'
@@ -99,6 +103,9 @@ class AuthProvider with ChangeNotifier {
             name: 'Admin Laundry',
             email: email,
             role: 'admin', // Set sebagai admin
+            phone: '',
+            address: '',
+            profilePicture: '',
           );
           await _db
               .collection('users')
@@ -161,13 +168,15 @@ class AuthProvider with ChangeNotifier {
         name: _userModel!.name,
         email: _userModel!.email,
         role: _userModel!.role,
-        profilePicture: base64String, // Sekarang berisi teks Base64
+        phone: _userModel!.phone,     // Tetap mempertahankan nomor hp lama
+        address: _userModel!.address, // Tetap mempertahankan alamat lama
+        profilePicture: base64String, // Sekarang berisi teks Base64 baru
       );
 
       notifyListeners();
       return base64String;
     } catch (e) {
-      print("Eror Base64: $e");
+      print("Error Base64: $e");
       return null;
     }
   }

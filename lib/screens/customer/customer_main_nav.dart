@@ -22,7 +22,7 @@ class _CustomerMainNavState extends State<CustomerMainNav> {
       const CustomerDashboard(), // Tab 1: Beranda yang baru (Kombinasi 3 Warna)
       const CustomerOrders(),    // Tab 2: Halaman Pesanan yang baru (GANTI DI SINI)
       const CustomerReports(),   // Tab 3: Halaman Laporan yang baru (TAMBAHKAN INI)
-      const CustomerProfile(),    // Tab 4
+      const CustomerAkun(),    // Tab 4
     ];
   }
 

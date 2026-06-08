@@ -557,7 +557,9 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
       ),
       builder: (context) {
         return StreamBuilder<List<OrderModel>>(
-          stream: provider.getActiveCustomerOrders(customerId ?? ''),
+          stream: provider.getAllCustomerOrders(
+            customerId ?? '',
+          ), // Ubah ke getAllCustomerOrders
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const SizedBox(
@@ -572,262 +574,160 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
               );
             }
 
-            // Filter transaksi yang berstatus 'Belum Bayar'
-            final unpaidOrders =
-                snapshot.data
-                    ?.where((dynamic o) => o.status == 'Belum Bayar')
-                    .toList() ??
-                [];
-
-            // Jika tidak ada tagihan
-            if (unpaidOrders.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.check_circle_outline_rounded,
-                      color: Colors.green,
-                      size: 50,
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      'Semua Tagihan Lunas',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Tidak ada transaksi yang berstatus Belum Bayar saat ini.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
-                    ),
-                  ],
+            //  TEMPELKAN KODE INI SEBAGAI GANTINYA:
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: Text(
+                    'Belum ada riwayat transaksi untuk kalkulasi laporan.',
+                  ),
                 ),
               );
             }
 
-            // Ambil pesanan belum bayar yang paling pertama
-            final activeOrder = unpaidOrders.first;
+            final allOrders = snapshot.data!;
+            int totalBiaya = 0;
+            int totalTransaksi = 0;
 
-            return StatefulBuilder(
-              builder: (BuildContext context, StateSetter setPaymentState) {
-                return Padding(
-                  padding: EdgeInsets.only(
-                    top: 20,
-                    left: 20,
-                    right: 20,
-                    bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            // Menghitung data laporan hanya dari cucian yang sudah selesai diproses & diambil
+            for (var order in allOrders) {
+              if (order.status == 'Selesai') {
+                totalBiaya += order.totalPrice;
+                totalTransaksi++;
+              }
+            }
+
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Ringkasan Bulan Ini',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0091BD),
+                    ),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 12),
+
+                  // Card Ringkasan Statistik Dinamis
+                  Row(
                     children: [
-                      const Text(
-                        'Detail Pembayaran',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFFF9C0A),
-                        ),
-                      ),
-                      const Divider(),
-
-                      // Ringkasan Pesanan
-                      Text(
-                        '${activeOrder.packageType} - ${activeOrder.itemDetail}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Parfum: ${activeOrder.perfumeVariant}',
-                        style: const TextStyle(
-                          color: Colors.black54,
-                          fontSize: 13,
-                        ),
-                      ),
-                      Text(
-                        'Jumlah: ${activeOrder.weightOrQuantity} Kg/unit',
-                        style: const TextStyle(
-                          color: Colors.black54,
-                          fontSize: 13,
-                        ),
-                      ),
-                      Text(
-                        'Metode Utama: ${activeOrder.paymentMethod}',
-                        style: const TextStyle(
-                          color: Colors.black54,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Pilihan Vendor Pembayaran secara Dinamis
-                      if (activeOrder.paymentMethod == 'Transfer Bank') ...[
-                        const Text(
-                          'Pilih Bank:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        DropdownButton<String>(
-                          isExpanded: true,
-                          hint: const Text('Pilih salah satu Bank'),
-                          value:
-                              _selectedVendor.isEmpty ||
-                                  ![
-                                    'BCA',
-                                    'BNI',
-                                    'MANDIRI',
-                                    'BRI',
-                                  ].contains(_selectedVendor)
-                              ? null
-                              : _selectedVendor,
-                          items: ['BCA', 'BNI', 'MANDIRI', 'BRI']
-                              .map(
-                                (e) =>
-                                    DropdownMenuItem(value: e, child: Text(e)),
-                              )
-                              .toList(),
-                          onChanged: (val) =>
-                              setPaymentState(() => _selectedVendor = val!),
-                        ),
-                      ] else if (activeOrder.paymentMethod ==
-                          'E-Wallet / QRIS') ...[
-                        const Text(
-                          'Pilih E-Wallet:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        DropdownButton<String>(
-                          isExpanded: true,
-                          hint: const Text('Pilih salah satu E-Wallet'),
-                          value:
-                              _selectedVendor.isEmpty ||
-                                  ![
-                                    'Gopay',
-                                    'Shopeepay',
-                                    'DANA',
-                                    'OVO',
-                                  ].contains(_selectedVendor)
-                              ? null
-                              : _selectedVendor,
-                          items: ['Gopay', 'Shopeepay', 'DANA', 'OVO']
-                              .map(
-                                (e) =>
-                                    DropdownMenuItem(value: e, child: Text(e)),
-                              )
-                              .toList(),
-                          onChanged: (val) =>
-                              setPaymentState(() => _selectedVendor = val!),
-                        ),
-                      ] else ...[
-                        Container(
-                          padding: const EdgeInsets.all(12),
+                      // Box Total Pendapatan / Pengeluaran User
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(8),
+                            color: const Color(0xFFFF9C0A).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFF9C0A)),
                           ),
-                          child: const Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.info_outline_rounded,
-                                color: Colors.grey,
+                              const Text(
+                                'Total Biaya',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
                               ),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Silakan lakukan pembayaran langsung di kasir lokasi laundry.',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.black54,
-                                  ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Rp $totalBiaya', // Menggunakan variabel looping yang kita buat sebelumnya
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFFF9C0A),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
+                      ),
+                      const SizedBox(width: 12),
 
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Total Tagihan:',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                            ),
+                      // Box Total Transaksi Jasa Laundry
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0091BD).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFF0091BD)),
                           ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Total Cucian',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '$totalTransaksi Transaksi', // Menggunakan variabel looping
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0091BD),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Grafik Penggunaan Jasa',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0091BD),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Wadah Visualisasi Grafik Kontainer (Placeholder)
+                  Container(
+                    height: 200,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.bar_chart_rounded,
+                            size: 50,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 8),
                           Text(
-                            'Rp ${activeOrder.totalPrice}',
+                            'Data grafik siap dipetakan dari $totalTransaksi transaksi.',
                             style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF0091BD),
+                              color: Colors.grey,
+                              fontSize: 12,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
-
-                      // Tombol Konfirmasi Bayar Sekarang
-                      SizedBox(
-                        width: double.infinity,
-                        height: 45,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF9C0A),
-                          ),
-                          onPressed:
-                              (activeOrder.paymentMethod != 'Cash' &&
-                                  _selectedVendor.isEmpty)
-                              ? null
-                              : () async {
-                                  String finalVendor =
-                                      activeOrder.paymentMethod == 'Cash'
-                                      ? 'Kasir Toko'
-                                      : _selectedVendor;
-                                  String? err = await provider.processPayment(
-                                    activeOrder.orderId,
-                                    finalVendor,
-                                  );
-
-                                  if (context.mounted) {
-                                    Navigator.pop(context);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          err == null
-                                              ? 'Pembayaran berhasil dikirim! Menunggu konfirmasi antrean dari admin.'
-                                              : 'Gagal: $err',
-                                        ),
-                                        backgroundColor: err == null
-                                            ? Colors.green
-                                            : Colors.red,
-                                      ),
-                                    );
-                                  }
-                                },
-                          child: const Text(
-                            'Bayar Sekarang',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ), // ElevatedButton
-                      ), // SizedBox
-                    ],
-                  ), // Column
-                ); // Padding
-              }, // Akhir dari builder: (context, setState)
+                    ),
+                  ),
+                ],
+              ),
             ); // StatefulBuilder <--- Gunakan koma atau titik koma tergantung posisi
           }, // Akhir dari builder: (context, snapshot)
         ); // StreamBuilder
